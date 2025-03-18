@@ -1,43 +1,53 @@
-name: CI
+name: Run Robot Framework Tests
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Setup Web Application
-        run: docker run -d -p 8000:8000 vncrtech/puppybank
-
-      - name: Setup Python
-        uses: actions/setup-python@v5.0.0
+      - name: Set Up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.12.2
+          python-version: "3.12"
 
-      - name: Setup Workspace
+      - name: Install Dependencies
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install --upgrade robotframework-seleniumlibrary
+          python -m venv $GITHUB_WORKSPACE/.venv
+          source $GITHUB_WORKSPACE/.venv/bin/activate
+          pip install --upgrade pip
+          pip install robotframework selenium webdriver-manager
 
-      - name: Run Tests
-        run: $GITHUB_WORKSPACE/.venv/bin/python3.12 -m robot.run --outputdir $GITHUB_WORKSPACE/results tests/
+      - name: Install Google Chrome & ChromeDriver
+        run: |
+          sudo apt update
+          sudo apt install -y google-chrome-stable
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+          wget https://chromedriver.storage.googleapis.com/$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip
+          chmod +x chromedriver
+          sudo mv chromedriver /usr/local/bin/
 
-      - name: Upload Test Report
-        uses: actions/upload-artifact@v4.3.1
+      - name: Kill Chrome Instances (Prevent Session Issues)
+        run: pkill chrome || true
+
+      - name: Run Robot Framework Tests
+        run: |
+          source $GITHUB_WORKSPACE/.venv/bin/activate
+          python -m robot.run --outputdir $GITHUB_WORKSPACE/results tests/
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
         with:
-          name: rf-results
-          path: results/
+          name: robot-test-results
+          path: $GITHUB_WORKSPACE/results
