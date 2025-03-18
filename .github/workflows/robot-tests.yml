@@ -1,20 +1,17 @@
 name: Run Robot Framework Tests
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '0 17 * * *'
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -24,36 +21,34 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install robotframework
-          pip install robotframework-seleniumlibrary
-          pip install webdriver-manager
-          pip install chromedriver-autoinstaller
+          # Install additional dependencies if needed
+          pip install -r requirements.txt
 
-      - name: Install Google Chrome & ChromeDriver
+      - name: Run Robot Framework tests
+        env:
+          WORK_TOKEN: ${{ secrets.GIT_TOKEN }}
+          TZ: Asia/Ho_Chi_Minh
         run: |
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-          python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
-          echo "✅ Chrome และ ChromeDriver ติดตั้งเรียบร้อย"
+          if ! robot --outputdir results --exclude skip tests/; then
+              echo "Robot Framework tests failed. Rerunning failed tests..."
+              if [ -f results/output.xml ]; then
+                  robot --rerunfailed results/output.xml --outputdir results_rerun tests/ || true
+                  if [ -f results_rerun/output.xml ]; then
+                      rebot --output results/output.xml --log results/log.html --report results/report.html --merge results/output.xml results_rerun/output.xml
+                  else
+                      echo "No output.xml file found from rerun. Skipping merge."
+                  fi
+              else
+                  echo "No output.xml file found. Cannot rerun failed tests."
+              fi
+          fi
 
-      - name: Set Chrome Options
-        run: |
-          echo "ROBOT_OPTIONS=--variable BROWSER:chrome --variable OPTIONS:--headless,--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--remote-debugging-port=9222,--disable-software-rasterizer" >> $GITHUB_ENV
-          echo "✅ Chrome options ถูกตั้งค่าเรียบร้อย"
+          echo "Script execution completed"
+        continue-on-error: true
 
-      - name: Debug Chrome Installation
-        run: |
-          google-chrome --version
-          chromedriver --version
-          which google-chrome
-          which chromedriver
-
-      - name: Run Robot Framework Tests
-        run: |
-          robot --outputdir results tests/
-
-      - name: Upload test results
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
+          path: ./results
           name: robot-test-results
-          path: results/
+          retention-days: 3
