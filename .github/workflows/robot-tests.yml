@@ -35,7 +35,8 @@ jobs:
           wget -q -O google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 
           # Install Google Chrome with automatic dependency fixes
-          sudo dpkg -i google-chrome.deb || sudo apt-get install -f -y
+          sudo dpkg -i google-chrome.deb || true  # Allow it to continue even if there are errors
+          sudo apt-get install -f -y  # Fix missing dependencies
           rm google-chrome.deb
 
           # Verify installation
@@ -54,6 +55,7 @@ jobs:
           # Set environment variables
           echo "CHROME_BIN=$(which google-chrome)" >> $GITHUB_ENV
           echo "CHROMEDRIVER=$(which chromedriver)" >> $GITHUB_ENV
+
 
       - name: Run Robot Framework Tests
         run: robot --outputdir results/ tests/
