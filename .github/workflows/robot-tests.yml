@@ -28,14 +28,11 @@ jobs:
           pip install --upgrade pip
           pip install robotframework robotframework-seleniumlibrary webdriver-manager
 
-      - name: Install Google Chrome & ChromeDriver
+      - name: Install or Update Google Chrome
         run: |
           sudo apt update
           sudo apt install -y google-chrome-stable
-          wget https://chromedriver.storage.googleapis.com/$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
-          unzip chromedriver_linux64.zip
-          chmod +x chromedriver
-          sudo mv chromedriver /usr/local/bin/
+          google-chrome --version
 
       - name: Kill Chrome Instances (Prevent Session Issues)
         run: pkill chrome || true
