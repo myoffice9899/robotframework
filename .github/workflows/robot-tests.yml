@@ -34,7 +34,7 @@ jobs:
           pip install --upgrade robotframework-seleniumlibrary
 
       - name: Run Tests
-        run: $GITHUB_WORKSPACE/.venv/bin/python3.12 -m robot.run --suite test-automation-101-rf.tests.smoke.login --outputdir $GITHUB_WORKSPACE/results .
+        run: $GITHUB_WORKSPACE/.venv/bin/python3.12 -m robot.run tests/ --outputdir $GITHUB_WORKSPACE/results .
 
       - name: Upload Test Report
         uses: actions/upload-artifact@v4.3.1
