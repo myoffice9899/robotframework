@@ -35,25 +35,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-  process-xml:
-    runs-on: ubuntu-latest
-    needs: setup  # ใช้ Python และ Dependencies ที่ติดตั้งจาก job setup
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Start MySQL Service
-        run: |
-          sudo systemctl start mysql
-          sudo systemctl status mysql
-
-      - name: Run XML Processing Script
-        run: python xml_to_db.py
-
   test-ui:
     runs-on: ubuntu-latest
-    needs: process-xml  # ต้องรอให้ XML Processing เสร็จก่อนถึงจะรัน UI Tests ได้
+    needs: setup  # ใช้ Python และ Dependencies ที่ติดตั้งจาก job setup
 
     steps:
       - name: Checkout Repository
@@ -83,6 +67,25 @@ jobs:
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
+        with:
+          name: robot-test-results
+          path: results/
+
+  process-xml:
+    runs-on: ubuntu-latest
+    needs: test-ui  # ต้องรอให้ UI Tests รันเสร็จ แล้วค่อยอัปเดตผลไปที่ MySQL
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Start MySQL Service
+        run: |
+          sudo systemctl start mysql
+          sudo systemctl status mysql
+
+      - name: Download UI Test Results
+        uses: actions/download-artifact@v4
         with:
           name: robot-test-results
           path: results/
