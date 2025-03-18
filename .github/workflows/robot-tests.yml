@@ -35,7 +35,9 @@ jobs:
           google-chrome --version
 
       - name: Kill Chrome Instances (Prevent Session Issues)
-        run: pkill chrome || true
+        run: |
+          pkill chrome || true
+          rm -rf /tmp/chrome*
 
       - name: Run Robot Framework Tests
         run: |
