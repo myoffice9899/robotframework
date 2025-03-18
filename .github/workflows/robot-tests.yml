@@ -30,8 +30,11 @@ jobs:
 
       - name: Install Chrome and WebDriver using WebDriver Manager
         run: |
-          python -c "from webdriver_manager.chrome import ChromeDriverManager; from selenium import webdriver; webdriver.Chrome(ChromeDriverManager().install())"
-          echo "ChromeDriver installed successfully"
+          python -m pip install webdriver-manager
+          CHROMEDRIVER_PATH=$(python -c "from webdriver_manager.chrome import ChromeDriverManager; print(ChromeDriverManager().install())")
+          echo "CHROMEDRIVER_PATH=${CHROMEDRIVER_PATH}"
+          echo "export PATH=$CHROMEDRIVER_PATH:$PATH" >> $GITHUB_ENV
+
 
       - name: Run Robot Framework Tests
         run: |
