@@ -1,4 +1,4 @@
-name: Run Robot Framework UI Tests and Update Results to MySQL
+name: Run Robot Framework UI Tests
 
 on:
   push:
@@ -7,10 +7,9 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  setup:
+  test-ui:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,25 +24,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install flask mysql-connector-python robotframework robotframework-seleniumlibrary webdriver-manager
-          echo "Python path: $(which python)"
-          echo "Robot path: $(which robot)"
-
-      - name: Cache Python Packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-  test-ui:
-    runs-on: ubuntu-latest
-    needs: setup
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+          pip install robotframework robotframework-seleniumlibrary webdriver-manager
 
       - name: Install Google Chrome
         run: |
@@ -60,7 +41,7 @@ jobs:
         run: mkdir -p results/
 
       - name: Run Robot Framework UI Tests
-        run: DISPLAY=:99 python -m robot --outputdir results/ tests/
+        run: DISPLAY=:99 robot --outputdir results/ tests/
         continue-on-error: true
 
       - name: List results directory
@@ -72,25 +53,3 @@ jobs:
         with:
           name: robot-test-results
           path: results/
-
-  process-xml:
-    runs-on: ubuntu-latest
-    needs: test-ui
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Start MySQL Service
-        run: |
-          sudo systemctl start mysql
-          sudo systemctl status mysql
-
-      - name: Download UI Test Results
-        uses: actions/download-artifact@v4
-        with:
-          name: robot-test-results
-          path: results/
-
-      - name: Update Test Results to Database
-        run: python xml_to_db.py results/output.xml
