@@ -26,13 +26,12 @@ jobs:
           python -m venv $GITHUB_WORKSPACE/.venv
           source $GITHUB_WORKSPACE/.venv/bin/activate
           pip install --upgrade pip
-          pip install robotframework selenium webdriver-manager
+          pip install robotframework robotframework-seleniumlibrary webdriver-manager
 
       - name: Install Google Chrome & ChromeDriver
         run: |
           sudo apt update
           sudo apt install -y google-chrome-stable
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
           wget https://chromedriver.storage.googleapis.com/$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
           unzip chromedriver_linux64.zip
           chmod +x chromedriver
@@ -40,6 +39,11 @@ jobs:
 
       - name: Kill Chrome Instances (Prevent Session Issues)
         run: pkill chrome || true
+
+      - name: Verify Installed Libraries
+        run: |
+          source $GITHUB_WORKSPACE/.venv/bin/activate
+          python -c "import SeleniumLibrary; print('✅ SeleniumLibrary is installed')"
 
       - name: Run Robot Framework Tests
         run: |
