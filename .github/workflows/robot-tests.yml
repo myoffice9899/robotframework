@@ -34,7 +34,7 @@ jobs:
           sudo apt install -y google-chrome-stable
           google-chrome --version
 
-      - name: Kill Chrome Instances (Prevent Session Issues)
+      - name: Kill Chrome Instances & Clear Profiles
         run: |
           pkill chrome || true
           rm -rf /tmp/chrome*
