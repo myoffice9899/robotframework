@@ -10,4 +10,5 @@ Open Google
     ${driver}=    Create Webdriver    Chrome    options=${chrome_options}
     Go To    https://www.google.com
     Sleep    5s
+    Capture Page Screenshot
     Close Browser
