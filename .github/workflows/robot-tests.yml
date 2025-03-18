@@ -30,20 +30,18 @@ jobs:
         run: |
           pip install playwright
           playwright install chromium
-          CHROME_BIN=$(playwright show-path | jq -r '.browsers.chromium.executablePath')
+          CHROME_BIN=$(npx playwright chromium executable-path)
           echo "CHROME_BIN=$CHROME_BIN" >> $GITHUB_ENV
-
 
       - name: Install ChromeDriver for Playwright Chromium
         run: |
-          CHROME_VERSION=$(playwright print-chromium-executable --version | awk '{print $2}' | cut -d '.' -f1)
+          CHROME_VERSION=$(npx playwright chromium executable-path --version | awk '{print $2}' | cut -d '.' -f1)
           DRIVER_URL="https://chromedriver.storage.googleapis.com/${CHROME_VERSION}.0.0/chromedriver_linux64.zip"
           wget -q -O chromedriver.zip $DRIVER_URL
           unzip chromedriver.zip
           sudo mv chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
           rm chromedriver.zip
-
 
       - name: Run Robot Framework Tests
         run: robot --outputdir results/ tests/
