@@ -34,12 +34,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
           python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
-          echo "Chrome and ChromeDriver installed successfully"
+          echo "✅ Chrome และ ChromeDriver ติดตั้งเรียบร้อย"
 
       - name: Set Chrome Options
         run: |
-          echo "ROBOT_OPTIONS=--variable BROWSER:chrome --variable OPTIONS:--headless,--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--remote-debugging-port=9222" >> $GITHUB_ENV
-          echo "Chrome options set successfully"
+          echo "ROBOT_OPTIONS=--variable BROWSER:chrome --variable OPTIONS:--headless,--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--remote-debugging-port=9222,--disable-software-rasterizer" >> $GITHUB_ENV
+          echo "✅ Chrome options ถูกตั้งค่าเรียบร้อย"
 
       - name: Debug Chrome Installation
         run: |
