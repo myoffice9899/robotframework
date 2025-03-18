@@ -1,4 +1,4 @@
-name: Run Robot Framework UI Tests
+name: Run Robot Framework UI Tests and Update Results to MySQL
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   test-ui:
@@ -24,7 +25,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install robotframework robotframework-seleniumlibrary webdriver-manager
+          pip install robotframework robotframework-seleniumlibrary webdriver-manager requests
 
       - name: Install Google Chrome
         run: |
@@ -53,3 +54,6 @@ jobs:
         with:
           name: robot-test-results
           path: results/
+
+      - name: Process and Upload XML Results to API
+        run: python scripts/upload_results.py results/output.xml
