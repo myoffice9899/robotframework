@@ -17,6 +17,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: List Repository Files
+        run: ls -lah
+
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
@@ -24,8 +27,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install --upgrade pip
-          pip install robotframework robotframework-seleniumlibrary webdriver-manager requests
+          python -m pip install --upgrade pip
+          python -m pip install robotframework robotframework-seleniumlibrary webdriver-manager requests mysql-connector-python
+
+      - name: Check Installed Python Packages
+        run: pip list
 
       - name: Install Google Chrome
         run: |
@@ -54,6 +60,9 @@ jobs:
         with:
           name: robot-test-results
           path: results/
+
+      - name: Check if upload_results.py exists
+        run: ls -lah scripts/
 
       - name: Process and Upload XML Results to API
         run: python scripts/upload_results.py results/output.xml
