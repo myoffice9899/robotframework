@@ -14,11 +14,13 @@ db_config = {
 }
 
 def convert_time(time_str):
-    """ แปลงเวลาในรูปแบบ Robot Framework (2025-03-12T06:03:52.584829) เป็น 'YYYY-MM-DD HH:MM:SS' """
+    """ แปลงเวลาในรูปแบบ Robot Framework เป็น 'YYYY-MM-DD HH:MM:SS' """
     if not time_str:
         return None
     try:
-        return datetime.strptime(time_str.split(".")[0], "%Y-%m-%dT%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
+        if "." in time_str:
+            time_str = time_str.split(".")[0]  # ตัดส่วนเศษวินาทีออก
+        return datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
     except Exception as e:
         print(f"❌ Error converting time {time_str}: {e}")
         return None
@@ -52,8 +54,19 @@ def process_test_results(xml_file):
         passed_tests = 0
         failed_tests = 0
 
-        # 🔹 Process test cases
+        # 🔹 Process test suites
         for suite in root.findall('./suite'):
+            suite_name = suite.attrib.get("name")
+            suite_id = suite.attrib.get("id")
+            
+            cursor.execute("""
+                INSERT INTO test_suites (run_id, suite_name, suite_id, status, total_tests, passed_tests, failed_tests)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE status=VALUES(status)
+            """, (run_id, suite_name, suite_id, "PASS", 0, 0, 0))
+            conn.commit()
+            
+            # 🔹 Process test cases
             for test in suite.findall('./test'):
                 test_name = test.attrib.get("name")
                 test_id = test.attrib.get("id")
@@ -63,12 +76,11 @@ def process_test_results(xml_file):
                 start_time = convert_time(status_elem.get("starttime"))
                 end_time = convert_time(status_elem.get("endtime"))
 
-                # บันทึกข้อมูลลง `test_cases`
                 cursor.execute("""
-                    INSERT INTO test_cases (test_id, test_name, status, start_time, end_time)
-                    VALUES (%s, %s, %s, %s, %s)
-                    ON DUPLICATE KEY UPDATE status=VALUES(status), start_time=VALUES(start_time), end_time=VALUES(end_time)
-                """, (test_id, test_name, status, start_time, end_time))
+                    INSERT INTO test_cases (suite_id, test_name, test_id, status, start_time, end_time)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE status=VALUES(status)
+                """, (suite_id, test_name, test_id, status, start_time, end_time))
                 conn.commit()
 
                 total_tests += 1
