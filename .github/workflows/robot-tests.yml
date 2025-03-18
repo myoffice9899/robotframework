@@ -26,6 +26,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install flask mysql-connector-python robotframework robotframework-seleniumlibrary webdriver-manager
+          echo "Python path: $(which python)"
+          echo "Robot path: $(which robot)"
 
       - name: Cache Python Packages
         uses: actions/cache@v3
@@ -37,7 +39,7 @@ jobs:
 
   test-ui:
     runs-on: ubuntu-latest
-    needs: setup  # ใช้ Python และ Dependencies ที่ติดตั้งจาก job setup
+    needs: setup
 
     steps:
       - name: Checkout Repository
@@ -58,7 +60,7 @@ jobs:
         run: mkdir -p results/
 
       - name: Run Robot Framework UI Tests
-        run: DISPLAY=:99 robot --outputdir results/ tests/
+        run: DISPLAY=:99 python -m robot --outputdir results/ tests/
         continue-on-error: true
 
       - name: List results directory
@@ -73,7 +75,7 @@ jobs:
 
   process-xml:
     runs-on: ubuntu-latest
-    needs: test-ui  # ต้องรอให้ UI Tests รันเสร็จ แล้วค่อยอัปเดตผลไปที่ MySQL
+    needs: test-ui
 
     steps:
       - name: Checkout Repository
