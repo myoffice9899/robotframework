@@ -37,11 +37,6 @@ jobs:
       - name: Kill Chrome Instances (Prevent Session Issues)
         run: pkill chrome || true
 
-      - name: Verify Installed Libraries
-        run: |
-          source $GITHUB_WORKSPACE/.venv/bin/activate
-          python -c "import SeleniumLibrary; print('✅ SeleniumLibrary is installed')"
-
       - name: Run Robot Framework Tests
         run: |
           source $GITHUB_WORKSPACE/.venv/bin/activate
