@@ -27,17 +27,18 @@ jobs:
           pip install robotframework
           pip install robotframework-seleniumlibrary
           pip install webdriver-manager
+          pip install chromedriver-autoinstaller
 
       - name: Install Google Chrome & ChromeDriver
         run: |
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
-          pip install chromedriver-autoinstaller
           python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
 
       - name: Set Chrome Options
         run: |
-          echo "ROBOT_OPTIONS=--variable BROWSER:chrome --variable OPTIONS:--headless,--no-sandbox,--disable-dev-shm-usage" >> $GITHUB_ENV
+          mkdir -p /tmp/chrome-user-data
+          echo "ROBOT_OPTIONS=--variable BROWSER:chrome --variable OPTIONS:--headless,--no-sandbox,--disable-dev-shm-usage,--user-data-dir=/tmp/chrome-user-data" >> $GITHUB_ENV
 
       - name: Run Robot Framework Tests
         run: |
