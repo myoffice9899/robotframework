@@ -36,9 +36,16 @@ jobs:
           sudo mv chromedriver /usr/local/bin/
           chromedriver --version
 
+      - name: Check Chrome & ChromeDriver Version
+        run: |
+          google-chrome --version
+          chromedriver --version
+
       - name: Run Robot Framework Tests
         run: |
           robot --loglevel TRACE -d results tests/
+        env:
+          ROBOT_OPTIONS: --variable BROWSER:chrome --variable OPTIONS:"add_argument(\"--headless=new\") add_argument(\"--disable-gpu\") add_argument(\"--no-sandbox\") add_argument(\"--disable-dev-shm-usage\")"
 
       - name: Compress test results
         run: |
