@@ -37,8 +37,7 @@ jobs:
 
       - name: Set Chrome Options
         run: |
-          mkdir -p /tmp/chrome-user-data
-          echo "ROBOT_OPTIONS=--variable BROWSER:chrome --variable OPTIONS:--headless,--no-sandbox,--disable-dev-shm-usage,--user-data-dir=/tmp/chrome-user-data" >> $GITHUB_ENV
+          echo "ROBOT_OPTIONS=--variable BROWSER:chrome --variable OPTIONS:--headless,--no-sandbox,--disable-dev-shm-usage,--guest,--remote-debugging-port=9222" >> $GITHUB_ENV
 
       - name: Run Robot Framework Tests
         run: |
