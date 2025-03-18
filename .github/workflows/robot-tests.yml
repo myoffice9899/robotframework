@@ -30,7 +30,9 @@ jobs:
         run: |
           pip install playwright
           playwright install chromium
-          echo "CHROME_BIN=$(playwright print-chromium-executable)" >> $GITHUB_ENV
+          CHROME_BIN=$(playwright show-path | jq -r '.browsers.chromium.executablePath')
+          echo "CHROME_BIN=$CHROME_BIN" >> $GITHUB_ENV
+
 
       - name: Install ChromeDriver for Playwright Chromium
         run: |
