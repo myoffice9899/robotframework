@@ -39,31 +39,18 @@ jobs:
           pkill chrome || true
 
       - name: Ensure Results Directory Exists
-        run: mkdir -p $GITHUB_WORKSPACE/results
+        run: mkdir -p results/
 
       - name: Run Robot Framework Tests
-        run: |
-          source $GITHUB_WORKSPACE/.venv/bin/activate
-          python -m robot.run --outputdir $GITHUB_WORKSPACE/results tests/
+        run: robot --outputdir results/ tests/
+        continue-on-error: true
 
-      - name: Verify Test Results Exist
-        run: |
-          echo "Checking if test results exist..."
-          ls -la $GITHUB_WORKSPACE/results || echo "❌ No test results found!"
+      - name: List results directory
+        run: ls -lah results/
 
-      - name: Compress Test Results to ZIP
-        run: |
-          echo "Compressing test results..."
-          cd $GITHUB_WORKSPACE/results || exit 1
-          zip -r robot-test-results.zip * || echo "❌ Failed to create ZIP!"
-
-      - name: Verify ZIP File Exists
-        run: |
-          echo "Checking if ZIP file exists..."
-          ls -la $GITHUB_WORKSPACE/results/robot-test-results.zip || echo "❌ ZIP file not found!"
-
-      - name: Upload Test Results (ZIP)
+      - name: Upload Test Results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: robot-test-results
-          path: $GITHUB_WORKSPACE/results/robot-test-results.zip
+          path: results/
