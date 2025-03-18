@@ -41,11 +41,12 @@ jobs:
           google-chrome --version
           chromedriver --version
 
-      - name: Run Robot Framework Tests
+      - name: Run Robot Framework Tests in Headless Mode
         run: |
           robot --loglevel TRACE -d results tests/
         env:
-          ROBOT_OPTIONS: --variable BROWSER:chrome --variable OPTIONS:"add_argument(\"--headless=new\") add_argument(\"--disable-gpu\") add_argument(\"--no-sandbox\") add_argument(\"--disable-dev-shm-usage\")"
+          BROWSER: chrome
+          SELENIUM_OPTIONS: --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage
 
       - name: Compress test results
         run: |
