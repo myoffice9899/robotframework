@@ -30,13 +30,15 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y wget unzip
-          
-          # Install Google Chrome
+
+          # Download Google Chrome
           wget -q -O google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo dpkg -i google-chrome.deb || sudo apt-get -f install -y
+
+          # Install Google Chrome with automatic dependency fixes
+          sudo dpkg -i google-chrome.deb || sudo apt-get install -f -y
           rm google-chrome.deb
 
-          # Verify Chrome installation
+          # Verify installation
           google-chrome --version
 
           # Install matching ChromeDriver
