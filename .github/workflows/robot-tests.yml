@@ -26,37 +26,11 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Install Google Chrome & ChromeDriver
+      - name: Install Playwright Chromium
         run: |
-          sudo apt update
-          sudo apt install -y wget unzip
-
-          # Download Google Chrome
-          wget -q -O google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-
-          # Install Google Chrome with error handling
-          sudo dpkg -i google-chrome.deb || true  # Ignore errors from dpkg
-          sudo apt-get install -f -y  # Fix missing dependencies
-          rm google-chrome.deb
-
-          # Verify installation
-          google-chrome --version || echo "Google Chrome installation failed, but continuing."
-
-          # Install matching ChromeDriver
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f1)
-          DRIVER_URL="https://chromedriver.storage.googleapis.com/${CHROME_VERSION}.0.0/chromedriver_linux64.zip"
-
-          wget -q -O chromedriver.zip $DRIVER_URL
-          unzip chromedriver.zip
-          sudo mv chromedriver /usr/local/bin/
-          sudo chmod +x /usr/local/bin/chromedriver
-          rm chromedriver.zip
-
-          # Set environment variables
-          echo "CHROME_BIN=$(which google-chrome)" >> $GITHUB_ENV
-          echo "CHROMEDRIVER=$(which chromedriver)" >> $GITHUB_ENV
-
-
+          pip install playwright
+          playwright install chromium
+          echo "CHROME_BIN=$(playwright print-chromium-executable)" >> $GITHUB_ENV
 
       - name: Run Robot Framework Tests
         run: robot --outputdir results/ tests/
