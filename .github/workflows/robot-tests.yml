@@ -25,21 +25,27 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Install Chrome & WebDriver
+      - name: Install Chrome & ChromeDriver
         run: |
           sudo apt update
           sudo apt install -y google-chrome-stable
-          wget https://chromedriver.storage.googleapis.com/$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+          CHROMEDRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION)
+          wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
           unzip chromedriver_linux64.zip
           sudo mv chromedriver /usr/local/bin/
           chromedriver --version
 
       - name: Run Robot Framework Tests
         run: |
-          robot -d results tests/
+          robot --loglevel TRACE -d results tests/
 
-      - name: Upload test results
+      - name: Compress test results
+        run: |
+          zip -r report.zip results/
+
+      - name: Upload report.zip
         uses: actions/upload-artifact@v4
         with:
-          name: robot-test-results
-          path: results/
+          name: report
+          path: report.zip
