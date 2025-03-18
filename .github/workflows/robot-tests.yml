@@ -26,15 +26,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install robotframework
           pip install robotframework-seleniumlibrary
-          pip install webdriver-manager  # ✅ ติดตั้ง WebDriver Manager
+          pip install webdriver-manager
 
-      - name: Install Chrome and WebDriver using WebDriver Manager
+      - name: Install Google Chrome
         run: |
-          python -m pip install webdriver-manager
-          CHROMEDRIVER_PATH=$(python -c "from webdriver_manager.chrome import ChromeDriverManager; print(ChromeDriverManager().install())")
-          echo "CHROMEDRIVER_PATH=${CHROMEDRIVER_PATH}"
-          echo "export PATH=$CHROMEDRIVER_PATH:$PATH" >> $GITHUB_ENV
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
 
+      - name: Install Chrome Driver
+        run: |
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+          DRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%.*})
+          wget -q -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip
+          sudo unzip /tmp/chromedriver.zip -d /usr/local/bin/
+          rm /tmp/chromedriver.zip
+
+      - name: Set Chrome Options
+        run: |
+          mkdir -p /tmp/chrome-user-data
+          echo "ROBOT_OPTIONS=--variable OPTIONS:--user-data-dir=/tmp/chrome-user-data,--no-sandbox,--disable-dev-shm-usage" >> $GITHUB_ENV
 
       - name: Run Robot Framework Tests
         run: |
