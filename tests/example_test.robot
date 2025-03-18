@@ -1,12 +1,14 @@
 *** Settings ***
 Library    SeleniumLibrary
+Library    OperatingSystem
 
 *** Variables ***
-${BROWSER}    chrome
+${PROFILE_DIR}    ${EMPTY}
 
 *** Test Cases ***
 Open Google
-    Open Browser    https://www.google.com    ${BROWSER}
-    Sleep    2s
-    Capture Page Screenshot
+    ${PROFILE_DIR}=    Evaluate    __import__('tempfile').mkdtemp()
+    Open Browser    https://www.google.com    Chrome
+    ...    options=add_argument("--headless"), add_argument("--no-sandbox"), add_argument("--disable-dev-shm-usage"), add_argument("--user-data-dir=${PROFILE_DIR}")
+    Sleep    5s
     Close Browser
