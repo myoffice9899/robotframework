@@ -41,7 +41,8 @@ jobs:
         run: ls -lah results/
 
       - name: Upload Test Results
+        if: always()  # ทำให้ขั้นตอนนี้รัน แม้ว่าขั้นตอนก่อนหน้าจะล้มเหลว
         uses: actions/upload-artifact@v4
         with:
           name: robot-test-results
-          path: tests/results/
+          path: results/
