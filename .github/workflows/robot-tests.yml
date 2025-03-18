@@ -49,18 +49,18 @@ jobs:
       - name: Verify Test Results Exist
         run: |
           echo "Checking if test results exist..."
-          ls -la $GITHUB_WORKSPACE/results || echo "No test results found!"
+          ls -la $GITHUB_WORKSPACE/results || echo "❌ No test results found!"
 
       - name: Compress Test Results to ZIP
         run: |
           echo "Compressing test results..."
           cd $GITHUB_WORKSPACE/results || exit 1
-          zip -r robot-test-results.zip . || echo "Failed to create ZIP!"
+          zip -r robot-test-results.zip * || echo "❌ Failed to create ZIP!"
 
       - name: Verify ZIP File Exists
         run: |
           echo "Checking if ZIP file exists..."
-          ls -la $GITHUB_WORKSPACE/results/robot-test-results.zip || echo "ZIP file not found!"
+          ls -la $GITHUB_WORKSPACE/results/robot-test-results.zip || echo "❌ ZIP file not found!"
 
       - name: Upload Test Results (ZIP)
         uses: actions/upload-artifact@v4
