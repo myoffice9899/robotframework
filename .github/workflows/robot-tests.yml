@@ -37,8 +37,8 @@ jobs:
       - name: Install ChromeDriver
         run: |
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f1-3)
-          DRIVER_URL=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq -r --arg v "$CHROME_VERSION" '.versions[] | select(.version == $v) | .downloads.chromedriver[] | select(.platform == "linux64") | .url')
-          if [ -z "$DRIVER_URL" ]; then
+          DRIVER_URL=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq -r --arg v "$CHROME_VERSION" '.versions[] | select(.version == $v) | .downloads.chromedriver[]? | select(.platform == "linux64") | .url')
+          if [ -z "$DRIVER_URL" ] || [ "$DRIVER_URL" == "null" ]; then
             echo "❌ No matching ChromeDriver found for Chrome version $CHROME_VERSION"
             exit 1
           fi
