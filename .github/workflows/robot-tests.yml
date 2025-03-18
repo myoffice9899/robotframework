@@ -1,4 +1,4 @@
-name: Run Robot Framework Tests
+name: Run Robot Framework Tests with Selenium
 
 on:
   push:
@@ -7,58 +7,38 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           pip install -r requirements.txt
 
-      - name: Install Google Chrome
+      - name: Install Chrome & WebDriver
         run: |
-          wget -q -O google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo dpkg -i google-chrome.deb || sudo apt-get install -f -y
-          rm google-chrome.deb
-          echo "CHROME_BIN=$(which google-chrome)" >> $GITHUB_ENV
-          google-chrome --version
-
-      - name: Install ChromeDriver
-        run: |
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f1-3)
-          DRIVER_URL=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq -r --arg v "$CHROME_VERSION" '.versions[] | select(.version == $v) | .downloads.chromedriver[]? | select(.platform == "linux64") | .url')
-          if [ -z "$DRIVER_URL" ] || [ "$DRIVER_URL" == "null" ]; then
-            echo "❌ No matching ChromeDriver found for Chrome version $CHROME_VERSION"
-            exit 1
-          fi
-          echo "Downloading ChromeDriver from: $DRIVER_URL"
-          wget -q -O chromedriver.zip "$DRIVER_URL"
-          unzip chromedriver.zip
+          sudo apt update
+          sudo apt install -y google-chrome-stable
+          wget https://chromedriver.storage.googleapis.com/$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip
           sudo mv chromedriver /usr/local/bin/
-          sudo chmod +x /usr/local/bin/chromedriver
-          rm chromedriver.zip
           chromedriver --version
 
       - name: Run Robot Framework Tests
-        run: robot --outputdir results/ tests/
-        continue-on-error: true
+        run: |
+          robot -d results tests/
 
-      - name: List results directory
-        run: ls -lah results/
-
-      - name: Upload Test Results
-        if: always()
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
           name: robot-test-results
