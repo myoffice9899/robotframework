@@ -36,27 +36,19 @@ jobs:
 
       - name: Install ChromeDriver
         run: |
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-          CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq -r --arg v "$CHROME_VERSION" '.versions[] | select(.version | startswith($v[:3])) | .version' | head -1)
-
-          if [ -z "$CHROMEDRIVER_VERSION" ]; then
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f1-3)
+          DRIVER_URL=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq -r --arg v "$CHROME_VERSION" '.versions[] | select(.version == $v) | .downloads.chromedriver[] | select(.platform == "linux64") | .url')
+          if [ -z "$DRIVER_URL" ]; then
             echo "❌ No matching ChromeDriver found for Chrome version $CHROME_VERSION"
             exit 1
           fi
-
-          DRIVER_URL="https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
-
-          echo "Downloading ChromeDriver version: $CHROMEDRIVER_VERSION"
-          wget -q -O chromedriver.zip $DRIVER_URL || { echo "❌ ChromeDriver download failed!"; exit 1; }
-
+          echo "Downloading ChromeDriver from: $DRIVER_URL"
+          wget -q -O chromedriver.zip "$DRIVER_URL"
           unzip chromedriver.zip
           sudo mv chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
           rm chromedriver.zip
-
           chromedriver --version
-
-
 
       - name: Run Robot Framework Tests
         run: robot --outputdir results/ tests/
