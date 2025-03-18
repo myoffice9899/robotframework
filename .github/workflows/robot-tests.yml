@@ -36,6 +36,9 @@ jobs:
       - name: Run Robot Tests
         run: robot --variable BROWSER:chrome --outputdir tests/results tests/
 
+      - name: List results directory
+        run: ls -lah results/
+
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
         with:
