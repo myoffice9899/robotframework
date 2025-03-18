@@ -1,9 +1,10 @@
 import os
+import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import mysql.connector
-import sys
 
+# 🔹 ข้อมูลการเชื่อมต่อ MySQL
 db_config = {
     "host": "ps03.zwhhosting.com",
     "port": 3306,
@@ -13,93 +14,92 @@ db_config = {
 }
 
 def convert_time(time_str):
-    """แปลงเวลา Robot Framework เป็น 'YYYY-MM-DD HH:MM:SS'"""
+    """ แปลงเวลาในรูปแบบ Robot Framework (2025-03-12T06:03:52.584829) เป็น 'YYYY-MM-DD HH:MM:SS' """
     if not time_str:
         return None
     try:
         return datetime.strptime(time_str.split(".")[0], "%Y-%m-%dT%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
     except Exception as e:
-        print(f"Error converting time {time_str}: {e}")
+        print(f"❌ Error converting time {time_str}: {e}")
         return None
 
-def update_test_results(filepath):
-    """อ่าน output.xml และอัปเดตผลลัพธ์ไปยัง MySQL"""
+def process_test_results(xml_file):
+    """ อ่าน `output.xml` และบันทึกข้อมูลลง MySQL """
     try:
-        tree = ET.parse(filepath)
+        tree = ET.parse(xml_file)
         root = tree.getroot()
+        
         run_id = root.attrib.get("generated")
-
         if not run_id:
-            print("No generated attribute found in <robot> tag.")
+            print("❌ No run_id found in XML file.")
             return
 
         global_start = convert_time(run_id)
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
 
+        # 🔹 ตรวจสอบว่ามี record `test_runs` หรือยัง
         cursor.execute("SELECT COUNT(*) FROM test_runs WHERE run_id = %s", (run_id,))
         if cursor.fetchone()[0] == 0:
             cursor.execute("""
-                INSERT INTO test_runs (run_id, start_time, status)
-                VALUES (%s, %s, %s)
-            """, (run_id, global_start, "PASS"))
+                INSERT INTO test_runs (run_id, start_time, status, total_tests, passed_tests, failed_tests)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (run_id, global_start, "PASS", 0, 0, 0))
             conn.commit()
-            print(f"Inserted new test_run with run_id {run_id}")
+            print(f"✅ Inserted new test_run: {run_id}")
 
+        total_tests = 0
+        passed_tests = 0
+        failed_tests = 0
+
+        # 🔹 Process test cases
         for suite in root.findall('./suite'):
-            parse_suite(suite, run_id, conn)
+            for test in suite.findall('./test'):
+                test_name = test.attrib.get("name")
+                test_id = test.attrib.get("id")
+
+                status_elem = test.find('status')
+                status = status_elem.get("status", "PASS")
+                start_time = convert_time(status_elem.get("starttime"))
+                end_time = convert_time(status_elem.get("endtime"))
+
+                # บันทึกข้อมูลลง `test_cases`
+                cursor.execute("""
+                    INSERT INTO test_cases (test_id, test_name, status, start_time, end_time)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE status=VALUES(status), start_time=VALUES(start_time), end_time=VALUES(end_time)
+                """, (test_id, test_name, status, start_time, end_time))
+                conn.commit()
+
+                total_tests += 1
+                if status.upper() == "PASS":
+                    passed_tests += 1
+                else:
+                    failed_tests += 1
+
+        # 🔹 อัปเดต `test_runs` ด้วยจำนวนเคสทั้งหมด
+        cursor.execute("""
+            UPDATE test_runs
+            SET total_tests = %s, passed_tests = %s, failed_tests = %s, status = %s
+            WHERE run_id = %s
+        """, (total_tests, passed_tests, failed_tests, "PASS" if failed_tests == 0 else "FAIL", run_id))
+        conn.commit()
 
         conn.close()
-        print(f"Test results updated successfully. Run ID: {run_id}")
+        print(f"✅ XML processed: {xml_file}")
+        print(f"   Total: {total_tests}, Passed: {passed_tests}, Failed: {failed_tests}")
+
     except Exception as e:
-        print(f"Error updating test results: {e}")
-
-def parse_suite(suite_elem, run_id, conn):
-    """อ่านข้อมูล Suite และอัปเดตผลลัพธ์"""
-    suite_name = suite_elem.attrib.get("name")
-    suite_id = suite_elem.attrib.get("id")
-    status_elem = suite_elem.find('status')
-    suite_status = status_elem.get("status", "PASS") if status_elem is not None else "PASS"
-
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute("""
-            INSERT INTO test_suites (run_id, suite_name, suite_id, status)
-            VALUES (%s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                status=VALUES(status)
-        """, (run_id, suite_name, suite_id, suite_status))
-        conn.commit()
-    except Exception as e:
-        print(f"Error updating suite {suite_id}: {e}")
-
-    for test in suite_elem.findall('./test'):
-        parse_test(test, suite_id, conn)
-
-def parse_test(test_elem, suite_id, conn):
-    """อ่านข้อมูล Test Case และอัปเดตผลลัพธ์"""
-    test_name = test_elem.attrib.get("name")
-    test_id = test_elem.attrib.get("id")
-    status_elem = test_elem.find('status')
-    test_status = status_elem.get("status", "PASS") if status_elem is not None else "PASS"
-
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute("""
-            INSERT INTO test_cases (suite_id, test_name, test_id, status)
-            VALUES (%s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                status=VALUES(status)
-        """, (suite_id, test_name, test_id, test_status))
-        conn.commit()
-    except Exception as e:
-        print(f"Error updating test case {test_id}: {e}")
+        print(f"❌ Error processing XML: {e}")
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        xml_file = sys.argv[1]
-        update_test_results(xml_file)
-    else:
-        print("No XML file provided.")
+    if len(sys.argv) < 2:
+        print("❌ Please provide the XML file path")
+        sys.exit(1)
+
+    xml_file = sys.argv[1]
+    if not os.path.exists(xml_file):
+        print(f"❌ File not found: {xml_file}")
+        sys.exit(1)
+
+    process_test_results(xml_file)
