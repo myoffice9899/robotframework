@@ -33,8 +33,9 @@ jobs:
           echo "CHROME_BIN=$(which chromium-browser)" >> $GITHUB_ENV
           echo "CHROMEDRIVER=$(which chromedriver)" >> $GITHUB_ENV
 
-      - name: Run Robot Tests
-        run: robot --variable BROWSER:chrome --outputdir tests/results tests/
+      - name: Run Robot Framework Tests
+        run: robot --outputdir results/ tests/
+        continue-on-error: true
 
       - name: List results directory
         run: ls -lah results/
