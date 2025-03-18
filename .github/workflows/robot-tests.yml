@@ -1,4 +1,4 @@
-name: Run Robot Framework Tests with Selenium
+name: Run Robot Framework Tests
 
 on:
   push:
@@ -11,49 +11,30 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+      
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.10'  # หรือใช้เวอร์ชันที่ต้องการ
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install robotframework
+          pip install robotframework-seleniumlibrary  # ติดตั้ง Selenium ถ้าจำเป็น
+          pip install robotframework-requests        # ติดตั้ง Requests Library ถ้าจำเป็น
+          pip install robotframework-pabot          # ติดตั้ง Pabot (สำหรับ parallel execution)
 
-      - name: Install Chrome & ChromeDriver
+      - name: Run Robot Framework Tests
         run: |
-          sudo apt update
-          sudo apt install -y google-chrome-stable
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1)
-          CHROMEDRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION})
-          wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
-          unzip chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
-          chromedriver --version
+          robot --outputdir results tests/  # รันเทสทั้งหมดในโฟลเดอร์ tests และเก็บผลลัพธ์ที่ results/
 
-      - name: Check Chrome & ChromeDriver Version
-        run: |
-          google-chrome --version
-          chromedriver --version
-
-      - name: Run Robot Framework Tests in Headless Mode
-        run: |
-          robot --loglevel TRACE -d results tests/
-        env:
-          BROWSER: chrome
-          SELENIUM_OPTIONS: --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage
-
-      - name: Compress test results
-        run: |
-          zip -r report.zip results/
-
-      - name: Upload report.zip
-        uses: actions/upload-artifact@v4
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
         with:
-          name: report
-          path: report.zip
+          name: robot-test-results
+          path: results/
