@@ -9,11 +9,11 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 db_config = {
-    "host": "ps03.zwhhosting.com",
-    "port": 3306,
-    "user": "zeddpszw_testtorial",
-    "password": "Bb@iFmEGaa4e@Ur",
-    "database": "zeddpszw_testtorial"
+    "host": os.getenv("DB_HOST"),
+    "port": int(os.getenv("DB_PORT", 3306)),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_DATABASE")
 }
 
 def convert_time(time_str):
