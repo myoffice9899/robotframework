@@ -3,6 +3,7 @@ import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import mysql.connector
+import pytz
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -16,11 +17,19 @@ db_config = {
 }
 
 def convert_time(time_str):
-    """แปลงเวลาในรูปแบบ Robot Framework (2025-03-12T06:03:52.584829) เป็น 'YYYY-MM-DD HH:MM:SS'"""
+    """แปลงเวลาในรูปแบบ Robot Framework (เช่น 2025-03-12T06:03:52.584829) เป็นเวลาประเทศไทย (YYYY-MM-DD HH:MM:SS)"""
     if not time_str:
         return None
     try:
-        return datetime.strptime(time_str.split(".")[0], "%Y-%m-%dT%H:%M:%S").strftime("%Y-%m-%d %H:%M:%S")
+        # ตัดส่วนหลังจุดออก
+        dt = datetime.strptime(time_str.split(".")[0], "%Y-%m-%dT%H:%M:%S")
+        # สมมติว่าเวลาที่รับเข้ามาเป็นเวลา UTC (ปรับตามความเหมาะสมหากไม่ใช่)
+        utc = pytz.utc
+        dt_utc = utc.localize(dt)
+        # แปลงเป็นเวลาประเทศไทย (Asia/Bangkok) ซึ่งมี offset +7 ชั่วโมง
+        thailand_tz = pytz.timezone("Asia/Bangkok")
+        dt_thailand = dt_utc.astimezone(thailand_tz)
+        return dt_thailand.strftime("%Y-%m-%d %H:%M:%S")
     except Exception as e:
         print(f"Error converting time {time_str}: {e}")
         return None
