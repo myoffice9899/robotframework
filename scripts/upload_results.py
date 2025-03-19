@@ -13,6 +13,63 @@ db_config = {
     "database": "zeddpszw_testtorial"
 }
 
+def create_tables():
+    """สร้างตารางทั้งหมดหากยังไม่มี"""
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS test_runs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            run_id VARCHAR(100) UNIQUE NOT NULL,
+            start_time DATETIME NOT NULL,
+            status ENUM('PASS', 'FAIL', 'ERROR') NOT NULL,
+            total_tests INT DEFAULT 0,
+            passed_tests INT DEFAULT 0,
+            failed_tests INT DEFAULT 0,
+            execution_time FLOAT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB;
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS test_suites (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            run_id VARCHAR(100) NOT NULL,
+            suite_name VARCHAR(255) NOT NULL,
+            suite_id VARCHAR(100) NOT NULL,
+            status ENUM('PASS', 'FAIL', 'ERROR') NOT NULL,
+            total_tests INT DEFAULT 0,
+            passed_tests INT DEFAULT 0,
+            failed_tests INT DEFAULT 0,
+            execution_time FLOAT,
+            UNIQUE KEY unique_suite_run (run_id, suite_id),
+            FOREIGN KEY (run_id) REFERENCES test_runs(run_id) ON DELETE CASCADE
+        ) ENGINE=InnoDB;
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS test_cases (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            suite_id VARCHAR(100) NOT NULL,
+            test_name VARCHAR(255) NOT NULL,
+            test_id VARCHAR(100) UNIQUE NOT NULL,
+            status ENUM('PASS', 'FAIL', 'ERROR') NOT NULL,
+            start_time DATETIME,
+            end_time DATETIME,
+            execution_time FLOAT,
+            error_message TEXT,
+            FOREIGN KEY (suite_id) REFERENCES test_suites(suite_id) ON DELETE CASCADE
+        ) ENGINE=InnoDB;
+        """)
+
+        conn.commit()
+        conn.close()
+        print("✅ Tables created successfully (if not exist).")
+    except Exception as e:
+        print(f"❌ Error creating tables: {e}")
+
 def convert_time(time_str):
     """ แปลงเวลาในรูปแบบ Robot Framework เป็น 'YYYY-MM-DD HH:MM:SS' """
     if not time_str:
@@ -105,6 +162,8 @@ def process_test_results(xml_file):
         print(f"❌ Error processing XML: {e}")
 
 if __name__ == "__main__":
+    create_tables()  # สร้างตารางก่อนเริ่มใช้งาน
+
     if len(sys.argv) < 2:
         print("❌ Please provide the XML file path")
         sys.exit(1)
