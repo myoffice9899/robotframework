@@ -28,7 +28,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install robotframework robotframework-seleniumlibrary webdriver-manager requests mysql-connector-python
+          python -m pip install robotframework robotframework-seleniumlibrary webdriver-manager requests mysql-connector-python pytz
 
       - name: Check Installed Python Packages
         run: pip list
